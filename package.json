@@ -1,0 +1,29 @@
+{
+  "name": "philippines-schools-connectivity",
+  "version": "1.0.0",
+  "description": "Philippines Schools Internet Connectivity Monitor - DICT & DepED",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx http-server -p 3000",
+    "build": "echo 'Static site - no build required'",
+    "start": "npx http-server -p 3000"
+  },
+  "keywords": [
+    "philippines",
+    "schools",
+    "internet",
+    "connectivity",
+    "dict",
+    "deped",
+    "mapping",
+    "leaflet"
+  ],
+  "author": "DICT & DepED Philippines",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

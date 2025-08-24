@@ -1,0 +1,23 @@
+# Development files
+node_modules/
+.git/
+.DS_Store
+*.log
+
+# Conversion scripts
+convert_excel_complete.js
+fix_csv_conversion.js
+convert_excel.js
+
+# Old/backup files
+dict_schools_old.csv
+dict_schools_old2.csv
+
+# Test files
+working.html
+minimal_test.html
+test.html
+
+# Development files
+*.md
+README.md
