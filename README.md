@@ -2,21 +2,6 @@
 
 A visual web application for monitoring internet connectivity across 46,983+ schools in the Philippines using official DICT data.
 
-## 🚀 Quick Start
-
-1. **Start the web server:**
-   ```bash
-   python3 server.py
-   ```
-
-2. **Open in browser:**
-   Navigate to `http://localhost:8001`
-
-3. **Load the real data:**
-   - Click "Upload CSV/Excel File"
-   - Select `dict_schools_masterlist.csv` from this folder
-   - Watch as all 46,983 schools load on the map!
-
 ## 📊 Features
 
 ### Visual Cluster Mapping
