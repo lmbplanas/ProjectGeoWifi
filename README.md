@@ -1,6 +1,6 @@
 # Philippines Schools Internet Connectivity Monitor
 
-A visual web application for monitoring internet connectivity across 46,983+ schools in the Philippines using official DICT data.
+A visual web application for monitoring internet connectivity across 47,000+ schools in the Philippines using official DepEd-DICT data.
 
 ## 📊 Features
 
