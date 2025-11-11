@@ -12,24 +12,7 @@ class SchoolConnectivityMonitor {
         this.updateStatus('Initializing map...');
         this.initMap();
         this.setupEventListeners();
-        this.loadSampleData();
-        
-        // Hide loading screen after initialization
-        setTimeout(() => {
-            const loadingScreen = document.getElementById('loadingScreen');
-            if (loadingScreen) {
-                loadingScreen.classList.add('fade-out');
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                }, 500);
-            }
-            this.updateStatus('Ready - Upload CSV for all 47,973 schools');
-            const statusDot = document.getElementById('statusDot');
-            if (statusDot) {
-                statusDot.classList.remove('loading');
-                statusDot.classList.add('online');
-            }
-        }, 800);
+        this.loadDataFromCSV();
         
         console.log('App initialization complete');
     }
@@ -150,21 +133,6 @@ class SchoolConnectivityMonitor {
         document.getElementById('connectivityFilter').addEventListener('change', () => {
             this.applyFilters();
         });
-
-        // View toggle handler
-        const viewToggle = document.getElementById('viewToggle');
-        if (viewToggle) {
-            viewToggle.addEventListener('click', () => {
-                viewToggle.classList.toggle('active');
-                // Toggle between cluster and heatmap view
-                const isHeatmap = viewToggle.classList.contains('active');
-                viewToggle.querySelector('span').textContent = isHeatmap ? 'Heatmap View' : 'Cluster View';
-                
-                // Update legend visibility
-                document.getElementById('clusterLegend').style.display = isHeatmap ? 'none' : 'block';
-                document.getElementById('heatmapLegend').style.display = isHeatmap ? 'block' : 'none';
-            });
-        }
 
         console.log('Event listeners set up');
     }
@@ -304,46 +272,63 @@ class SchoolConnectivityMonitor {
         return icon;
     }
 
-    loadSampleData() {
-        console.log('Loading sample data...');
+    loadDataFromCSV() {
+        console.log('Auto-loading data from CSV...');
+        this.updateStatus('Loading schools data...');
         
-        // Update status
-        document.getElementById('dataStatus').textContent = 'Loading sample data - Upload CSV for all 47,973 schools';
-        document.getElementById('dataStatus').style.color = '#ffc107';
+        const statusDot = document.getElementById('statusDot');
+        if (statusDot) {
+            statusDot.classList.add('loading');
+        }
         
-        // Sample data
-        const sampleData = [
-            {
-                "School Name": "Manila High School",
-                "Latitude": 14.5995,
-                "Longitude": 120.9842,
-                "Region": "NCR",
-                "Province": "Metro Manila",
-                "Municipality": "Manila",
-                "Connectivity Status": "online"
-            },
-            {
-                "School Name": "Cebu Central School",
-                "Latitude": 10.3157,
-                "Longitude": 123.8854,
-                "Region": "Region VII",
-                "Province": "Cebu",
-                "Municipality": "Cebu City",
-                "Connectivity Status": "limited"
-            },
-            {
-                "School Name": "Davao Elementary",
-                "Latitude": 7.0731,
-                "Longitude": 125.6128,
-                "Region": "Region XI",
-                "Province": "Davao del Sur",
-                "Municipality": "Davao City",
-                "Connectivity Status": "offline"
-            }
-        ];
-
-        console.log('Sample data created, processing...');
-        this.processSchoolData(sampleData);
+        fetch('dict_schools_masterlist.csv')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(csvText => {
+                console.log('CSV file loaded, parsing...');
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        console.log('CSV parsed successfully, records:', results.data.length);
+                        this.processSchoolData(results.data);
+                        
+                        setTimeout(() => {
+                            const loadingScreen = document.getElementById('loadingScreen');
+                            if (loadingScreen) {
+                                loadingScreen.classList.add('fade-out');
+                                setTimeout(() => {
+                                    loadingScreen.style.display = 'none';
+                                }, 500);
+                            }
+                            const statusDot = document.getElementById('statusDot');
+                            if (statusDot) {
+                                statusDot.classList.remove('loading');
+                                statusDot.classList.add('online');
+                            }
+                        }, 800);
+                    },
+                    error: (error) => {
+                        console.error('CSV parsing error:', error);
+                        this.updateStatus('Error loading data');
+                        alert('Error parsing CSV file: ' + error.message);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading CSV file:', error);
+                this.updateStatus('Error: Could not load data file');
+                alert('Error loading CSV file. Make sure dict_schools_masterlist.csv is in the same directory.');
+                
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                }
+            });
     }
 
     handleFileUpload(file) {
@@ -567,6 +552,68 @@ class SchoolConnectivityMonitor {
         
         return false;
     }
+    
+    isWithinDisplayBounds(lat, lng) {
+        // Convert to numbers for safety
+        const latitude = parseFloat(lat);
+        const longitude = parseFloat(lng);
+        
+        if (isNaN(latitude) || isNaN(longitude)) {
+            return false;
+        }
+        
+        // Philippines bounds including ALL legitimate territories
+        // Only filter out truly extreme outliers outside the archipelago
+        
+        // Batanes (northernmost Philippines)
+        if (latitude >= 20.0 && latitude <= 21.5) {
+            return longitude >= 120.5 && longitude <= 122.2;
+        }
+        
+        // Luzon region (including NCR, CAR, Regions I-V)
+        if (latitude >= 12.0 && latitude <= 20.0) {
+            return longitude >= 119.8 && longitude <= 123.0;
+        }
+        
+        // Visayas region (Regions VI-VIII) 
+        if (latitude >= 9.0 && latitude <= 12.5) {
+            return longitude >= 122.0 && longitude <= 126.0;
+        }
+        
+        // Mindanao region (Regions IX-XIII, BARMM, CARAGA)
+        if (latitude >= 5.5 && latitude <= 10.5) {
+            return longitude >= 121.0 && longitude <= 127.0;
+        }
+        
+        // Palawan region (full extent)
+        if (latitude >= 7.0 && latitude <= 12.0) {
+            return longitude >= 116.5 && longitude <= 119.8;
+        }
+        
+        // Sulu archipelago and Tawi-Tawi (BARMM southern islands)
+        if (latitude >= 4.5 && latitude <= 7.0) {
+            return longitude >= 119.0 && longitude <= 122.5;
+        }
+        
+        // Philippines center point for extreme outlier detection
+        const philippinesCenter = { lat: 12.8797, lng: 121.7740 };
+        const distance = this.calculateDistance(latitude, longitude, philippinesCenter.lat, philippinesCenter.lng);
+        
+        // Allow anything within 1500km of center (very generous to include all islands)
+        // This catches legitimate remote islands while filtering true outliers
+        return distance <= 1500;
+    }
+    
+    calculateDistance(lat1, lng1, lat2, lng2) {
+        const R = 6371; // Earth's radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLng/2) * Math.sin(dLng/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
 
     updateRegionFilter() {
         const regionFilter = document.getElementById('regionFilter');
@@ -600,8 +647,10 @@ class SchoolConnectivityMonitor {
 
     displaySchools() {
         console.log('displaySchools called');
-        const schoolsToDisplay = this.filteredSchools.length > 0 ? this.filteredSchools : this.schools;
-        console.log('Schools to display:', schoolsToDisplay.length);
+        const allSchoolsForStats = this.filteredSchools.length > 0 ? this.filteredSchools : this.schools;
+        
+        console.log(`Total schools: ${allSchoolsForStats.length}, Displaying all on map`);
+        console.log('Showing all schools without coordinate filtering');
         
         if (!this.markers) {
             console.error('Markers cluster group not initialized!');
@@ -613,8 +662,10 @@ class SchoolConnectivityMonitor {
         console.log('Cleared existing markers');
 
         let addedMarkers = 0;
-        schoolsToDisplay.forEach((school, index) => {
+        
+        allSchoolsForStats.forEach((school, index) => {
             try {
+                // Add all schools to map without coordinate filtering
                 const marker = this.createSchoolMarker(school);
                 this.markers.addLayer(marker);
                 addedMarkers++;
@@ -627,7 +678,10 @@ class SchoolConnectivityMonitor {
             }
         });
         
-        console.log(`Successfully added ${addedMarkers} markers to map out of ${schoolsToDisplay.length} schools`);
+        console.log(`Successfully added ${addedMarkers} markers to map, total processed: ${allSchoolsForStats.length} schools`);
+        
+        // Update status to show all schools
+        this.updateStatus(`Displaying all ${addedMarkers} schools on map`);
     }
 
     createSchoolMarker(school) {
