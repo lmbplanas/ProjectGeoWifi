@@ -8,13 +8,14 @@ class SchoolConnectivityMonitor {
     }
 
     init() {
-        console.log('Initializing app...');
+        console.log('🚀 Initializing app...');
         this.updateStatus('Initializing map...');
         this.initMap();
+        console.log('✅ Map initialized');
         this.setupEventListeners();
+        console.log('✅ Event listeners set up');
         this.loadDataFromCSV();
-        
-        console.log('App initialization complete');
+        console.log('✅ Started loading CSV data');
     }
 
     initMap() {
