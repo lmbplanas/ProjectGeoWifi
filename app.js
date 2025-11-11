@@ -119,11 +119,6 @@ class SchoolConnectivityMonitor {
                 icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
             }
         }
-        
-        // File upload handler
-        document.getElementById('csvFile').addEventListener('change', (e) => {
-            this.handleFileUpload(e.target.files[0]);
-        });
 
         // Filter handlers
         document.getElementById('regionFilter').addEventListener('change', () => {
@@ -274,28 +269,36 @@ class SchoolConnectivityMonitor {
 
     loadDataFromCSV() {
         console.log('Auto-loading data from CSV...');
-        this.updateStatus('Loading schools data...');
+        this.updateStatus('Downloading school data (7.3MB)...');
         
         const statusDot = document.getElementById('statusDot');
         if (statusDot) {
             statusDot.classList.add('loading');
         }
         
+        const startTime = Date.now();
+        
         fetch('dict_schools_masterlist.csv')
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                console.log(`CSV download complete (${((Date.now() - startTime) / 1000).toFixed(1)}s)`);
+                this.updateStatus('Parsing CSV data...');
                 return response.text();
             })
             .then(csvText => {
-                console.log('CSV file loaded, parsing...');
+                console.log('CSV file loaded, parsing rows...');
                 Papa.parse(csvText, {
                     header: true,
                     skipEmptyLines: true,
                     complete: (results) => {
-                        console.log('CSV parsed successfully, records:', results.data.length);
-                        this.processSchoolData(results.data);
+                        console.log(`CSV parsed successfully in ${((Date.now() - startTime) / 1000).toFixed(1)}s - records:`, results.data.length);
+                        this.updateStatus(`Processing ${results.data.length.toLocaleString()} schools...`);
+                        
+                        setTimeout(() => {
+                            this.processSchoolData(results.data);
+                        }, 100);
                         
                         setTimeout(() => {
                             const loadingScreen = document.getElementById('loadingScreen');
@@ -646,7 +649,10 @@ class SchoolConnectivityMonitor {
     }
 
     displaySchools() {
+        const startTime = Date.now();
         console.log('displaySchools called');
+        this.updateStatus('Rendering markers on map...');
+        
         const allSchoolsForStats = this.filteredSchools.length > 0 ? this.filteredSchools : this.schools;
         
         console.log(`Total schools: ${allSchoolsForStats.length}, Displaying all on map`);
@@ -678,10 +684,10 @@ class SchoolConnectivityMonitor {
             }
         });
         
-        console.log(`Successfully added ${addedMarkers} markers to map, total processed: ${allSchoolsForStats.length} schools`);
+        const renderTime = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`Successfully added ${addedMarkers} markers in ${renderTime}s, total processed: ${allSchoolsForStats.length} schools`);
         
-        // Update status to show all schools
-        this.updateStatus(`Displaying all ${addedMarkers} schools on map`);
+        this.updateStatus(`Loaded ${addedMarkers.toLocaleString()} schools`);
     }
 
     createSchoolMarker(school) {

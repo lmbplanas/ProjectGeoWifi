@@ -174,15 +174,21 @@
     </div>
     
     <script>
-        // Immediate test script
-        console.log('HTML loaded, testing JavaScript...');
-        document.getElementById('dataStatus').textContent = 'JavaScript loaded, initializing map...';
+        console.log('HTML loaded');
+        const loadStart = Date.now();
+        document.getElementById('dataStatus').textContent = 'Loading libraries...';
         document.getElementById('dataStatus').style.color = 'orange';
     </script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-    <script src="app.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" onload="console.log('Leaflet loaded')"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js" onload="console.log('MarkerCluster loaded')"></script>
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js" onload="console.log('XLSX loaded')"></script>
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js" onload="console.log('Papa Parse loaded')"></script>
+    <script>
+        // Force reload app.js by adding timestamp
+        const appScript = document.createElement('script');
+        appScript.src = 'app.js?' + Date.now();
+        appScript.onload = () => console.log(`All scripts loaded in ${((Date.now() - loadStart) / 1000).toFixed(1)}s`);
+        document.body.appendChild(appScript);
+    </script>
 </body>
 </html>
