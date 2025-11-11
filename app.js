@@ -279,7 +279,7 @@ class SchoolConnectivityMonitor {
         
         const startTime = Date.now();
         
-        fetch('dict_schools_masterlist.csv')
+        fetch('dict_schools_masterlist.csv?v=' + Date.now())
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -295,6 +295,11 @@ class SchoolConnectivityMonitor {
                     skipEmptyLines: true,
                     complete: (results) => {
                         console.log(`CSV parsed successfully in ${((Date.now() - startTime) / 1000).toFixed(1)}s - records:`, results.data.length);
+                        console.log('CSV columns:', Object.keys(results.data[0] || {}));
+                        console.log('First 3 records connectivity:', results.data.slice(0, 3).map(s => ({
+                            name: s.School_Name,
+                            connectivity: s['Connectivity Status']
+                        })));
                         this.updateStatus(`Processing ${results.data.length.toLocaleString()} schools...`);
                         
                         setTimeout(() => {
@@ -397,25 +402,24 @@ class SchoolConnectivityMonitor {
         this.schools = data.map((school, index) => {
             try {
                 const normalizedSchool = {
-                    name: school['School Name'] || school.name || 'Unknown School',
+                    name: school['School_Name'] || school['School Name'] || school.name || 'Unknown School',
                     latitude: parseFloat(school['Latitude'] || school.latitude || 0),
                     longitude: parseFloat(school['Longitude'] || school.longitude || 0),
                     region: school['Region'] || school.region || 'Unknown Region',
                     province: school['Province'] || school.province || 'Unknown Province',
                     city: school['Municipality'] || school.municipality || school.city || 'Unknown City',
-                    connectivity: this.normalizeConnectivityStatus(school['Connectivity Status'] || school.connectivity || 'unknown')
+                    barangay: school['Barangay'] || school.barangay || 'Unknown Barangay',
+                    schoolId: school['School_ID'] || school['NSBI SCHOOL ID'] || 'Unknown',
+                    connectivity: this.normalizeConnectivityStatus(school['Connectivity Status'] || school.connectivity || 'offline')
                 };
 
-                // Debug: log problematic records
-                if (index < 5) {
+                // Debug: log first few records
+                if (index < 10) {
                     console.log(`Record ${index}:`, {
                         name: normalizedSchool.name,
-                        lat: normalizedSchool.latitude,
-                        lng: normalizedSchool.longitude,
                         connectivity: normalizedSchool.connectivity,
-                        rawLat: school['Latitude'],
-                        rawLng: school['Longitude'],
-                        rawConnectivity: school['Connectivity Status']
+                        rawConnectivity: school['Connectivity Status'],
+                        allColumns: Object.keys(school).slice(0, 20)
                     });
                 }
 
